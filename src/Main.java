@@ -1,62 +1,144 @@
-abstract class Room {
-    protected String type;
-    protected int beds;
-    protected double price;
+import java.util.HashMap;
+import java.util.Map;
 
-    public Room(String type, int beds, double price) {
-        this.type = type;
-        this.beds = beds;
-        this.price = price;
+// ------------------------------
+// RoomInventory Class
+// ------------------------------
+class RoomInventory {
+    private HashMap<String, Integer> inventory;
+
+    // Constructor initializes inventory
+    public RoomInventory() {
+        inventory = new HashMap<>();
     }
 
-    public void displayRoomDetails() {
-        System.out.println("Room Type: " + type);
-        System.out.println("Beds: " + beds);
-        System.out.println("Price per night: $" + price);
+    // Register a room type with available count
+    public void addRoomType(String roomType, int count) {
+        if (count < 0) {
+            System.out.println("Invalid room count for " + roomType);
+            return;
+        }
+        inventory.put(roomType, count);
+        System.out.println(roomType + " added with " + count + " rooms.");
+    }
+
+    // Get current availability of a room type
+    public int getAvailability(String roomType) {
+        return inventory.getOrDefault(roomType, 0);
+    }
+
+    // Book rooms (decrease availability)
+    public boolean bookRoom(String roomType, int roomsNeeded) {
+        if (!inventory.containsKey(roomType)) {
+            System.out.println("Room type '" + roomType + "' does not exist.");
+            return false;
+        }
+
+        int available = inventory.get(roomType);
+
+        if (roomsNeeded <= 0) {
+            System.out.println("Invalid booking quantity.");
+            return false;
+        }
+
+        if (available >= roomsNeeded) {
+            inventory.put(roomType, available - roomsNeeded);
+            System.out.println(roomsNeeded + " " + roomType + " room(s) booked successfully.");
+            return true;
+        } else {
+            System.out.println("Booking failed! Only " + available + " " + roomType + " room(s) available.");
+            return false;
+        }
+    }
+
+    // Cancel booking / add back rooms (increase availability)
+    public boolean cancelBooking(String roomType, int roomsToAdd) {
+        if (!inventory.containsKey(roomType)) {
+            System.out.println("Room type '" + roomType + "' does not exist.");
+            return false;
+        }
+
+        if (roomsToAdd <= 0) {
+            System.out.println("Invalid cancellation quantity.");
+            return false;
+        }
+
+        int available = inventory.get(roomType);
+        inventory.put(roomType, available + roomsToAdd);
+
+        System.out.println(roomsToAdd + " " + roomType + " room(s) restored successfully.");
+        return true;
+    }
+
+    // Update room count directly (controlled update)
+    public boolean updateAvailability(String roomType, int newCount) {
+        if (!inventory.containsKey(roomType)) {
+            System.out.println("Room type '" + roomType + "' does not exist.");
+            return false;
+        }
+
+        if (newCount < 0) {
+            System.out.println("Availability cannot be negative.");
+            return false;
+        }
+
+        inventory.put(roomType, newCount);
+        System.out.println(roomType + " availability updated to " + newCount);
+        return true;
+    }
+
+    // Display full inventory
+    public void displayInventory() {
+        System.out.println("\n===== CURRENT ROOM INVENTORY =====");
+        if (inventory.isEmpty()) {
+            System.out.println("No room types registered.");
+            return;
+        }
+
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println("Room Type: " + entry.getKey() + " | Available Rooms: " + entry.getValue());
+        }
+        System.out.println("==================================\n");
     }
 }
 
-class SingleRoom extends Room {
-    public SingleRoom() {
-        super("Single Room", 1, 100);
-    }
-}
-
-class DoubleRoom extends Room {
-    public DoubleRoom() {
-        super("Double Room", 2, 180);
-    }
-}
-
-class SuiteRoom extends Room {
-    public SuiteRoom() {
-        super("Suite Room", 3, 350);
-    }
-}
-
+// ------------------------------
+// Main Application Class
+// ------------------------------
 public class BookMyStayApp {
-
     public static void main(String[] args) {
 
-        Room single = new SingleRoom();
-        Room doubleRoom = new DoubleRoom();
-        Room suite = new SuiteRoom();
+        // Step 1: Initialize inventory component
+        RoomInventory inventory = new RoomInventory();
 
-        int singleAvailability = 10;
-        int doubleAvailability = 7;
-        int suiteAvailability = 3;
+        // Step 2: Register room types with available counts
+        inventory.addRoomType("Single", 10);
+        inventory.addRoomType("Double", 7);
+        inventory.addRoomType("Deluxe", 5);
+        inventory.addRoomType("Suite", 2);
 
-        System.out.println("===== Book My Stay - Room Availability =====\n");
+        // Step 3: Display initial inventory
+        inventory.displayInventory();
 
-        single.displayRoomDetails();
-        System.out.println("Available Rooms: " + singleAvailability);
-        System.out.println();
+        // Step 4: Retrieve current availability
+        System.out.println("Available Deluxe Rooms: " + inventory.getAvailability("Deluxe"));
+        System.out.println("Available Suite Rooms: " + inventory.getAvailability("Suite"));
 
-        doubleRoom.displayRoomDetails();
-        System.out.println("Available Rooms: " + doubleAvailability);
-        System.out.println();
+        // Step 5: Perform booking operations
+        inventory.bookRoom("Double", 2);
+        inventory.bookRoom("Suite", 1);
+        inventory.bookRoom("Suite", 2); // should fail
 
-        suite.displayRoomDetails();
-        System.out.println("Available Rooms: " + suiteAvailability);
+        // Step 6: Display updated inventory
+        inventory.displayInventory();
+
+        // Step 7: Cancel a booking / restore rooms
+        inventory.cancelBooking("Suite", 1);
+
+        // Step 8: Controlled direct update
+        inventory.updateAvailability("Single", 8);
+
+        // Step 9: Final inventory state
+        inventory.displayInventory();
     }
 }
