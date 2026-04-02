@@ -2,99 +2,65 @@ import java.util.HashMap;
 import java.util.Map;
 
 // ------------------------------
+// Room Class (Domain Model)
+// ------------------------------
+class Room {
+    private String roomType;
+    private double pricePerNight;
+    private String amenities;
+
+    public Room(String roomType, double pricePerNight, String amenities) {
+        this.roomType = roomType;
+        this.pricePerNight = pricePerNight;
+        this.amenities = amenities;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public double getPricePerNight() {
+        return pricePerNight;
+    }
+
+    public String getAmenities() {
+        return amenities;
+    }
+
+    public void displayRoomDetails() {
+        System.out.println("Room Type       : " + roomType);
+        System.out.println("Price Per Night : Rs. " + pricePerNight);
+        System.out.println("Amenities       : " + amenities);
+    }
+}
+
+// ------------------------------
 // RoomInventory Class
 // ------------------------------
 class RoomInventory {
     private HashMap<String, Integer> inventory;
 
-    // Constructor initializes inventory
     public RoomInventory() {
         inventory = new HashMap<>();
     }
 
-    // Register a room type with available count
+    // Add room type with count
     public void addRoomType(String roomType, int count) {
         if (count < 0) {
             System.out.println("Invalid room count for " + roomType);
             return;
         }
         inventory.put(roomType, count);
-        System.out.println(roomType + " added with " + count + " rooms.");
     }
 
-    // Get current availability of a room type
+    // Read-only availability access
     public int getAvailability(String roomType) {
         return inventory.getOrDefault(roomType, 0);
-    }
-
-    // Book rooms (decrease availability)
-    public boolean bookRoom(String roomType, int roomsNeeded) {
-        if (!inventory.containsKey(roomType)) {
-            System.out.println("Room type '" + roomType + "' does not exist.");
-            return false;
-        }
-
-        int available = inventory.get(roomType);
-
-        if (roomsNeeded <= 0) {
-            System.out.println("Invalid booking quantity.");
-            return false;
-        }
-
-        if (available >= roomsNeeded) {
-            inventory.put(roomType, available - roomsNeeded);
-            System.out.println(roomsNeeded + " " + roomType + " room(s) booked successfully.");
-            return true;
-        } else {
-            System.out.println("Booking failed! Only " + available + " " + roomType + " room(s) available.");
-            return false;
-        }
-    }
-
-    // Cancel booking / add back rooms (increase availability)
-    public boolean cancelBooking(String roomType, int roomsToAdd) {
-        if (!inventory.containsKey(roomType)) {
-            System.out.println("Room type '" + roomType + "' does not exist.");
-            return false;
-        }
-
-        if (roomsToAdd <= 0) {
-            System.out.println("Invalid cancellation quantity.");
-            return false;
-        }
-
-        int available = inventory.get(roomType);
-        inventory.put(roomType, available + roomsToAdd);
-
-        System.out.println(roomsToAdd + " " + roomType + " room(s) restored successfully.");
-        return true;
-    }
-
-    // Update room count directly (controlled update)
-    public boolean updateAvailability(String roomType, int newCount) {
-        if (!inventory.containsKey(roomType)) {
-            System.out.println("Room type '" + roomType + "' does not exist.");
-            return false;
-        }
-
-        if (newCount < 0) {
-            System.out.println("Availability cannot be negative.");
-            return false;
-        }
-
-        inventory.put(roomType, newCount);
-        System.out.println(roomType + " availability updated to " + newCount);
-        return true;
     }
 
     // Display full inventory
     public void displayInventory() {
         System.out.println("\n===== CURRENT ROOM INVENTORY =====");
-        if (inventory.isEmpty()) {
-            System.out.println("No room types registered.");
-            return;
-        }
-
         for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
             System.out.println("Room Type: " + entry.getKey() + " | Available Rooms: " + entry.getValue());
         }
@@ -103,42 +69,80 @@ class RoomInventory {
 }
 
 // ------------------------------
-// Main Application Class
+// SearchService Class
 // ------------------------------
-public class BookMyStayApp {
+class SearchService {
+    private RoomInventory inventory;
+    private HashMap<String, Room> roomCatalog;
+
+    public SearchService(RoomInventory inventory, HashMap<String, Room> roomCatalog) {
+        this.inventory = inventory;
+        this.roomCatalog = roomCatalog;
+    }
+
+    // Search and display only available rooms
+    public void searchAvailableRooms() {
+        System.out.println("\n===== AVAILABLE ROOMS =====");
+
+        boolean found = false;
+
+        for (Map.Entry<String, Room> entry : roomCatalog.entrySet()) {
+            String roomType = entry.getKey();
+            Room room = entry.getValue();
+
+            int availableCount = inventory.getAvailability(roomType);
+
+            // Show only available rooms
+            if (availableCount > 0) {
+                found = true;
+                room.displayRoomDetails();
+                System.out.println("Available Rooms : " + availableCount);
+                System.out.println("----------------------------------");
+            }
+        }
+
+        if (!found) {
+            System.out.println("No rooms are currently available.");
+        }
+
+        System.out.println("==============================\n");
+    }
+}
+
+// ------------------------------
+// Main Class
+// ------------------------------
+public class Main {
     public static void main(String[] args) {
 
-        // Step 1: Initialize inventory component
+        // Step 1: Initialize centralized inventory
         RoomInventory inventory = new RoomInventory();
 
-        // Step 2: Register room types with available counts
-        inventory.addRoomType("Single", 10);
-        inventory.addRoomType("Double", 7);
-        inventory.addRoomType("Deluxe", 5);
+        // Step 2: Register room availability
+        inventory.addRoomType("Single", 5);
+        inventory.addRoomType("Double", 3);
+        inventory.addRoomType("Deluxe", 0);   // unavailable
         inventory.addRoomType("Suite", 2);
 
-        // Step 3: Display initial inventory
+        // Step 3: Create room catalog (room details)
+        HashMap<String, Room> roomCatalog = new HashMap<>();
+
+        roomCatalog.put("Single", new Room("Single", 2000, "AC, WiFi, TV"));
+        roomCatalog.put("Double", new Room("Double", 3500, "AC, WiFi, TV, Mini Fridge"));
+        roomCatalog.put("Deluxe", new Room("Deluxe", 5000, "AC, WiFi, TV, Mini Fridge, Balcony"));
+        roomCatalog.put("Suite", new Room("Suite", 8000, "AC, WiFi, TV, Mini Fridge, Living Area"));
+
+        // Step 4: Display inventory before search
+        System.out.println("Inventory Before Search:");
         inventory.displayInventory();
 
-        // Step 4: Retrieve current availability
-        System.out.println("Available Deluxe Rooms: " + inventory.getAvailability("Deluxe"));
-        System.out.println("Available Suite Rooms: " + inventory.getAvailability("Suite"));
+        // Step 5: Guest performs room search
+        SearchService searchService = new SearchService(inventory, roomCatalog);
+        searchService.searchAvailableRooms();
 
-        // Step 5: Perform booking operations
-        inventory.bookRoom("Double", 2);
-        inventory.bookRoom("Suite", 1);
-        inventory.bookRoom("Suite", 2); // should fail
-
-        // Step 6: Display updated inventory
-        inventory.displayInventory();
-
-        // Step 7: Cancel a booking / restore rooms
-        inventory.cancelBooking("Suite", 1);
-
-        // Step 8: Controlled direct update
-        inventory.updateAvailability("Single", 8);
-
-        // Step 9: Final inventory state
+        // Step 6: Display inventory after search
+        // This proves search did not modify system state
+        System.out.println("Inventory After Search (Unchanged):");
         inventory.displayInventory();
     }
 }
